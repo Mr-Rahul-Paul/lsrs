@@ -70,7 +70,7 @@ fn get_files(path: &Path) -> Vec<FileEntry> {
                         } else {
                             EntryType::File
                         },
-                        len_bytes: meta.len(),
+                        len_bytes: if meta.is_dir() { 0 } else { meta.len() },
                         modified: "".to_string(), // placeholder for now
                     });
                 }
