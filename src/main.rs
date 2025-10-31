@@ -70,7 +70,11 @@ fn get_files(path: &Path) -> Vec<FileEntry> {
                         } else {
                             EntryType::File
                         },
-                        len_bytes: if meta.is_dir() { 0 } else { meta.len() },
+                        len_bytes: if meta.is_dir() {
+                            compute_dir_size(&file.path())
+                        } else {
+                            meta.len()
+                        },
                         modified: "".to_string(), // placeholder for now
                     });
                 }
@@ -78,4 +82,23 @@ fn get_files(path: &Path) -> Vec<FileEntry> {
         }
     }
     data
+}
+
+fn compute_dir_size(path: &Path) -> u64 {
+    let mut total_size: u64 = 0;
+    if let Ok(read_dir) = fs::read_dir(path) {
+        for entry in read_dir {
+            if let Ok(file) = entry {
+                let entry_path = file.path();
+                if let Ok(meta) = fs::metadata(&entry_path) {
+                    if meta.is_dir() {
+                        total_size = total_size.saturating_add(compute_dir_size(&entry_path));
+                    } else {
+                        total_size = total_size.saturating_add(meta.len());
+                    }
+                }
+            }
+        }
+    }
+    total_size
 }
